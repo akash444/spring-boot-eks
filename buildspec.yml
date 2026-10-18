@@ -20,6 +20,12 @@ phases:
       - export SHORT_COMMIT_SHA="${FULL_COMMIT_SHA:0:7}"
       - export REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
       - export IMAGE_URI="$REGISTRY/$IMAGE_REPO_NAME"
+      - export RELEASE_TAG=""
+      - |
+        if [ -n "$CODEBUILD_SOURCE_VERSION" ] && [[ "$CODEBUILD_SOURCE_VERSION" == refs/tags/* ]]; then
+          RELEASE_TAG="${CODEBUILD_SOURCE_VERSION#refs/tags/}"
+          echo "Release build detected: $RELEASE_TAG"
+        fi
 
   build:
     commands:
@@ -29,11 +35,20 @@ phases:
       - mvn package -DskipTests
       - echo "Building AMD64 Docker image..."
       - docker build --platform linux/amd64 -t "$IMAGE_URI:$FULL_COMMIT_SHA" -t "$IMAGE_URI:$SHORT_COMMIT_SHA" .
-      - echo "Built image tags $SHORT_COMMIT_SHA and $FULL_COMMIT_SHA"
+      - |
+        if [ -n "$RELEASE_TAG" ]; then
+          docker tag "$IMAGE_URI:$FULL_COMMIT_SHA" "$IMAGE_URI:$RELEASE_TAG"
+        fi
+      - echo "Image build completed."
 
   post_build:
     commands:
       - echo "Pushing commit-SHA image tags to ECR..."
       - docker push "$IMAGE_URI:$FULL_COMMIT_SHA"
       - docker push "$IMAGE_URI:$SHORT_COMMIT_SHA"
+      - |
+        if [ -n "$RELEASE_TAG" ]; then
+          echo "Pushing release image tag: $RELEASE_TAG"
+          docker push "$IMAGE_URI:$RELEASE_TAG"
+        fi
       - echo "Image published successfully."
