@@ -25,4 +25,9 @@ public class DemoController {
 
         return "Hey Akash! Request handled by Pod: " + hostname;
     }
+
+    @GetMapping("/api/pipeline-test")
+    public String hello() {
+        return "SUCCESS! \uD83D\uDE80 Fresh commit automatically deployed to EKS! ";
+    }
 }
