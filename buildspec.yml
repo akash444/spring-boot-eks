@@ -55,3 +55,12 @@ phases:
           docker push "$IMAGE_URI:$RELEASE_TAG"
         fi
       - echo "Image published successfully."
+      - echo "Writing image metadata artifact..."
+      - mkdir -p deployment-artifact
+      - printf '{"ImageURI":"%s:%s"}\n' "$IMAGE_URI" "$SHORT_COMMIT_SHA" > deployment-artifact/imageDetail.json
+      - cat deployment-artifact/imageDetail.json
+
+artifacts:
+  files:
+    - deployment-artifact/imageDetail.json
+  discard-paths: yes
