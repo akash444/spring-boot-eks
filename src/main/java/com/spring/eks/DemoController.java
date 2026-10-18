@@ -27,7 +27,7 @@ public class DemoController {
     }
 
     @GetMapping("/api/pipeline-test")
-    public String hello() {
+    public String pipelineTest() {
         return "SUCCESS! \uD83D\uDE80 Fresh commit automatically deployed to EKS! ";
     }
 }
