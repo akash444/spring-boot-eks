@@ -6,6 +6,9 @@ env:
     AWS_DEFAULT_REGION: "ap-southeast-2"
     AWS_ACCOUNT_ID: "685323281079"
     IMAGE_REPO_NAME: "akash/spring-eks"
+  exported-variables:
+    - IMAGE_URI
+    - SHORT_COMMIT_SHA
 
 phases:
   install:
