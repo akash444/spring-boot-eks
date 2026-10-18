@@ -1,0 +1,63 @@
+
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "ap-southeast-2"
+    EKS_CLUSTER_NAME: "spring-eks-lab"
+    K8S_NAMESPACE: "default"
+    K8S_DEPLOYMENT_NAME: "spring-boot-app"
+
+phases:
+  install:
+    commands:
+      - echo "Checking deployment tools..."
+      - aws --version
+      - |
+        if ! command -v kubectl >/dev/null 2>&1; then
+          echo "ERROR: kubectl is not installed in this build image."
+          exit 1
+        fi
+      - kubectl version --client
+
+  pre_build:
+    commands:
+      - echo "Reading image metadata from the pipeline artifact..."
+      - |
+        if [ ! -f imageDetail.json ]; then
+          echo "ERROR: imageDetail.json was not found at the artifact root."
+          find . -maxdepth 3 -type f
+          exit 1
+        fi
+      - export IMAGE_URI="$(python3 -c 'import json; print(json.load(open("imageDetail.json"))["ImageURI"])')"
+      - |
+        if [ -z "$IMAGE_URI" ]; then
+          echo "ERROR: ImageURI is empty."
+          exit 1
+        fi
+      - echo "Image to deploy: $IMAGE_URI"
+      - echo "Configuring access to EKS..."
+      - aws eks update-kubeconfig --region "$AWS_DEFAULT_REGION" --name "$EKS_CLUSTER_NAME"
+
+  build:
+    commands:
+      - echo "Checking Kubernetes access..."
+      - kubectl get deployment "$K8S_DEPLOYMENT_NAME" -n "$K8S_NAMESPACE"
+      - |
+        CONTAINER_NAME="$(kubectl get deployment "$K8S_DEPLOYMENT_NAME" \
+          -n "$K8S_NAMESPACE" \
+          -o jsonpath='{.spec.template.spec.containers[0].name}')"
+
+        if [ -z "$CONTAINER_NAME" ]; then
+          echo "ERROR: No container found in the deployment."
+          exit 1
+        fi
+
+        echo "Updating container: $CONTAINER_NAME"
+        kubectl set image "deployment/$K8S_DEPLOYMENT_NAME" \
+          "$CONTAINER_NAME=$IMAGE_URI" \
+          -n "$K8S_NAMESPACE"
+      - echo "Waiting for deployment rollout..."
+      - kubectl rollout status "deployment/$K8S_DEPLOYMENT_NAME" -n "$K8S_NAMESPACE" --timeout=180s
+      - echo "Deployment completed successfully."
+      - kubectl get pods -n "$K8S_NAMESPACE" -o wide
