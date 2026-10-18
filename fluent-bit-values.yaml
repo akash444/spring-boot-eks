@@ -1,0 +1,32 @@
+env:
+  - name: ES_HOST
+    value: "my-elasticsearch-project-e6d5a0.es.ap-southeast-2.aws.elastic.cloud"
+
+envFrom:
+  - secretRef:
+      name: elastic-api-key
+
+config:
+  filters: |
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Merge_Log On
+        Keep_Log Off
+        K8S-Logging.Parser On
+        K8S-Logging.Exclude On
+        Labels Off
+
+  outputs: |
+    [OUTPUT]
+        Name es
+        Match kube.*
+        Host ${ES_HOST}
+        Port 443
+        TLS On
+        TLS.Verify On
+        HTTP_API_Key ${ES_API_KEY}
+        Suppress_Type_Name On
+        Logstash_Format On
+        Logstash_Prefix eks-app-logs
+        Retry_Limit False
