@@ -14,6 +14,7 @@ public class DemoController {
 
     @GetMapping("/api/hello")
     public String hello() {
+        log.info("/api/hello - Triggered");
         return "Hey Akash! Finally, your Spring Boot project is deployed in EKS! 🚀";
     }
 
@@ -28,6 +29,13 @@ public class DemoController {
 
     @GetMapping("/api/pipeline-test")
     public String pipelineTest() {
+        log.info("/api/pipeline-test - Triggered");
+        return "SUCCESS! \uD83D\uDE80 Fresh commit automatically deployed to EKS! ";
+    }
+
+    @GetMapping("/api/test-api")
+    public String testApi() {
+        log.info("/api/test-api - Triggered");
         return "SUCCESS! \uD83D\uDE80 Fresh commit automatically deployed to EKS! ";
     }
 }
